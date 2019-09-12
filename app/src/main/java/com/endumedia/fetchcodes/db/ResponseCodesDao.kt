@@ -19,4 +19,7 @@ abstract class ResponseCodesDao {
 
     @Query("SELECT * FROM ResponseCodeResult")
     abstract fun getLatestCode(): LiveData<ResponseCodeResult>
+
+    @Query("SELECT COUNT(*) FROM ResponseCodeResult")
+    abstract fun getCount(): LiveData<Long>
 }

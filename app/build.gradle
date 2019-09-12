@@ -70,6 +70,9 @@ dependencies {
     implementation deps.dagger.android
     implementation deps.dagger.android_support
 
+    implementation deps.rxjava2
+    implementation deps.rx_android
+    
     // Android Testing Support Library's runner and rules
     androidTestImplementation deps.atsl.core
     androidTestImplementation deps.atsl.runner

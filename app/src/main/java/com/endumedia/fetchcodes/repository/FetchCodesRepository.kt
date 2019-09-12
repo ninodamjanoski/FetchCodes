@@ -1,12 +1,12 @@
 package com.endumedia.fetchcodes.repository
 
-import androidx.lifecycle.LiveData
+import com.endumedia.fetchcodes.vo.ResponseCodeResult
 
 
 /**
  * Created by Nino on 11.09.19
  */
 interface FetchCodesRepository {
-    fun saveCode(code: String)
-    fun getLatestCode(): LiveData<String>
+    fun saveCode(responseCodeResult: ResponseCodeResult?)
+    fun getLatestCode(): Listing<ResponseCodeResult>
 }
