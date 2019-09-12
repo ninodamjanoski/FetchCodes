@@ -10,5 +10,5 @@ import com.endumedia.fetchcodes.vo.NextPathResult
 
 fun NextPathResult.endPoint(): String {
     val arr = nextPath.split('/')
-    return arr[arr.size - 1]
+    return arr[arr.size - 2] + "/"
 }

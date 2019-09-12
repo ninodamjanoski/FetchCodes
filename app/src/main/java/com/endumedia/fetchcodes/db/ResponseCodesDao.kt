@@ -17,7 +17,8 @@ abstract class ResponseCodesDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun saveCode(code: ResponseCodeResult)
 
-    @Query("SELECT * FROM ResponseCodeResult")
+    @Query("SELECT * FROM ResponseCodeResult " +
+            "WHERE ID = (SELECT MAX(ID) FROM ResponseCodeResult)")
     abstract fun getLatestCode(): LiveData<ResponseCodeResult>
 
     @Query("SELECT COUNT(*) FROM ResponseCodeResult")

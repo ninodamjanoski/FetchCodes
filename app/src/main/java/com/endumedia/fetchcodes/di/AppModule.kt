@@ -5,6 +5,8 @@ import androidx.room.Room
 import com.endumedia.fetchcodes.api.FetchCodesApi
 import com.endumedia.fetchcodes.db.FetchCodesDb
 import com.endumedia.fetchcodes.db.ResponseCodesDao
+import com.endumedia.fetchcodes.util.SchedulerProvider
+import com.endumedia.fetchcodes.util.SchedulerProviderImpl
 import dagger.Module
 import dagger.Provides
 import java.util.concurrent.Executor
@@ -42,7 +44,7 @@ class AppModule {
 
     @Singleton
     @Provides
-    fun provideIOAppExecutor(): Executor {
-        return Executors.newFixedThreadPool(5)
+    fun provideSchedulerProvider(): SchedulerProvider {
+        return SchedulerProviderImpl()
     }
 }

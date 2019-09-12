@@ -3,12 +3,12 @@ package com.endumedia.fetchcodes.api
 import android.util.Log
 import com.endumedia.fetchcodes.vo.NextPathResult
 import com.endumedia.fetchcodes.vo.ResponseCodeResult
-import io.reactivex.Flowable
 import io.reactivex.Single
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -19,7 +19,7 @@ import retrofit2.http.Path
  */
 interface FetchCodesApi {
 
-    @GET
+    @GET("/")
     fun getPath(): Single<NextPathResult>
 
     @GET("/{endpoint}")
@@ -27,7 +27,8 @@ interface FetchCodesApi {
 
 
     companion object {
-        private const val BASE_URL = "http://localhost:8000/"
+        // Just insert your local ip in order to work
+        private const val BASE_URL = "http://192.168.0.138:8000/"
         fun create(): FetchCodesApi = create(HttpUrl.parse(BASE_URL)!!)
         fun create(httpUrl: HttpUrl): FetchCodesApi {
             val logger = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger {
@@ -42,6 +43,7 @@ interface FetchCodesApi {
                 .baseUrl(httpUrl)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build()
                 .create(FetchCodesApi::class.java)
         }

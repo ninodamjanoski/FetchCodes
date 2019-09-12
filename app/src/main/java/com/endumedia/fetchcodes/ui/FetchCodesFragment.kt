@@ -61,8 +61,9 @@ class FetchCodesFragment : Fragment(), Injectable {
                     btFetch?.isEnabled = false
                 }
                 Status.SUCCESS, Status.FAILED -> {
-                    pbLoading?.visibility = View.GONE
+                    pbLoading?.visibility = View.INVISIBLE
                     btFetch?.isEnabled = true
+                    // If its error, message should not be empty
                     state.msg?.let {
                         Snackbar.make(view, it, Snackbar.LENGTH_SHORT).show()
                     }
