@@ -27,7 +27,7 @@ interface FetchCodesApi {
 
 
     companion object {
-        // Just insert your local ip in order to work
+        // Just insert your local ip in order to work, if you are on wifi
         private const val BASE_URL = "http://192.168.0.138:8000/"
         fun create(): FetchCodesApi = create(HttpUrl.parse(BASE_URL)!!)
         fun create(httpUrl: HttpUrl): FetchCodesApi {

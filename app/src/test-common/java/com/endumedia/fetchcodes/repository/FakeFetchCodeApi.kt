@@ -15,8 +15,9 @@ import java.lang.Exception
  */
 class FakeFetchCodeApi : FetchCodesApi {
 
-    private val model = mutableListOf<ResponseCodeResult>()
-    private val modelNextPath = mutableListOf<NextPathResult>()
+    private val model = mutableListOf<ResponseCodeResult?>()
+    private val modelNextPath = mutableListOf<NextPathResult?>()
+
     var failurePathMsg: String? = null
     var failureResponseMsg: String? = null
 
@@ -30,6 +31,8 @@ class FakeFetchCodeApi : FetchCodesApi {
 
 
     fun clear() {
+        failurePathMsg = null
+        failureResponseMsg = null
         modelNextPath.clear()
         model.clear()
     }
@@ -39,7 +42,7 @@ class FakeFetchCodeApi : FetchCodesApi {
             return Single.error(IOException(it))
         }
 
-        return Single.just(modelNextPath[0])
+        return Single.just(modelNextPath.last())
     }
 
     override fun getResponseCode(endPoint: String): Single<ResponseCodeResult> {
@@ -47,7 +50,7 @@ class FakeFetchCodeApi : FetchCodesApi {
             return Single.error(IOException(it))
         }
 
-        return Single.just(model[0])
+        return Single.just(model.last())
 
     }
 }

@@ -25,13 +25,12 @@ class FetchCodesRepositoryImplTest {
     @get:Rule // used to make all live data calls sync
     val instantExecutor = InstantTaskExecutorRule()
 
-    val db = Mockito.mock(FetchCodesDb::class.java)
-    private val dao = Mockito.mock(ResponseCodesDao::class.java)
+    val db = mock(FetchCodesDb::class.java)
+    private val dao = mock(ResponseCodesDao::class.java)
 
     private val fakeApi = FakeFetchCodeApi()
     private val responseCodesFactory = ItemsFactory()
 
-    private var isDbEmpty: Boolean = false // to fake empty db
     private lateinit var repository: FetchCodesRepository
     val saveCodeLiveData = MutableLiveData<ResponseCodeResult>()
     @Before
@@ -64,10 +63,10 @@ class FetchCodesRepositoryImplTest {
 
         val listing = repository.getLatestCode()
 
-        val networkObserver = Mockito.mock(Observer::class.java) as Observer<NetworkState>
+        val networkObserver = mock(Observer::class.java) as Observer<NetworkState>
         listing.networkState.observeForever(networkObserver)
 
-        val saveObserver = Mockito.mock(Observer::class.java) as Observer<ResponseCodeResult>
+        val saveObserver = mock(Observer::class.java) as Observer<ResponseCodeResult>
         Mockito.`when`(dao.saveCode(responseCodesFactory.list[0])).then {
             saveCodeLiveData.value = it.arguments[0] as ResponseCodeResult?
             it

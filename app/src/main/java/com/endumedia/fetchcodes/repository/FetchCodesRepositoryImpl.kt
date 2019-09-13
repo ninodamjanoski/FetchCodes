@@ -37,15 +37,14 @@ class FetchCodesRepositoryImpl @Inject constructor(private val fetchCodesApi: Fe
             responseCodeCount = codesDao.getCount(),
             fetch = {
                 fetchTrigger.value = null
+                networkState.value = NetworkState.LOADING
             },
             networkState = fetchState
         )
     }
 
+    val networkState = MutableLiveData<NetworkState>()
     private fun fetchCode(): LiveData<NetworkState> {
-
-        val networkState = MutableLiveData<NetworkState>()
-        networkState.value = NetworkState.LOADING
 
         fetchCodesApi.getPath()
             .flatMap { result -> fetchCodesApi.getResponseCode(result.endPoint())}
