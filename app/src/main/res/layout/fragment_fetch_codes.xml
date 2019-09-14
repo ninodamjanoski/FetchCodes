@@ -47,17 +47,17 @@
             android:layout_marginStart="@dimen/default_margin"
             android:layout_marginEnd="@dimen/default_margin"
             android:layout_marginRight="@dimen/default_margin"
-            android:maxLines="1"
-            android:textSize="11sp"
+            android:maxLines="2"
+            android:textSize="@dimen/responseCodeTextSize"
             app:layout_constraintStart_toEndOf="@+id/tvResponseCodeInfo"
             app:layout_constraintTop_toTopOf="@+id/tvResponseCodeInfo"
             app:layout_constraintBottom_toBottomOf="@+id/tvResponseCodeInfo"
             app:layout_constraintEnd_toEndOf="parent"
-            tools:text="sdfsdfsdfffffffffffffffffffffffffffffffffffffffff" />
+            tools:text="sdfsdfsdfffffffff                ffffffffffffffffffffffffffffffff" />
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="0.5dp"
+            android:layout_height="0.4dip"
             android:background="@color/grey"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

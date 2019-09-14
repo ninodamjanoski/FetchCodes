@@ -93,9 +93,6 @@ class FetchCodesFragmentTest : BaseUiTest() {
 
         Espresso.onView(withId(R.id.btFetch)).perform(click())
 
-//        onView(withId(R.id.pbLoading)).check(matches(isDisplayed()))
-//        onView(withId(R.id.btFetch)).check(matches(not(isEnabled())))
-
         Espresso.onView(withId(R.id.tvResponseCode))
             .check(matches(withText(containsString(itemsFactory.list.last().responseCode))))
         Espresso.onView(withId(R.id.tvTimesFetched))
