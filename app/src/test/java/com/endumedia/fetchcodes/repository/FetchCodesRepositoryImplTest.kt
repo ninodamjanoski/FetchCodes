@@ -25,14 +25,16 @@ class FetchCodesRepositoryImplTest {
     @get:Rule // used to make all live data calls sync
     val instantExecutor = InstantTaskExecutorRule()
 
-    val db = mock(FetchCodesDb::class.java)
+    private val db = mock(FetchCodesDb::class.java)
     private val dao = mock(ResponseCodesDao::class.java)
 
     private val fakeApi = FakeFetchCodeApi()
     private val responseCodesFactory = ItemsFactory()
 
     private lateinit var repository: FetchCodesRepository
-    val saveCodeLiveData = MutableLiveData<ResponseCodeResult>()
+    private val saveCodeLiveData = MutableLiveData<ResponseCodeResult>()
+    private val FAILED_TO_CONNECT_MESSAGE = "Failed to connect to /192.168.0.138:8000"
+
     @Before
     fun init() {
         Mockito.`when`(db.codesDao()).thenReturn(dao)
@@ -59,7 +61,7 @@ class FetchCodesRepositoryImplTest {
         Mockito.doReturn(MutableLiveData<Long>()).`when`(dao).getCount()
 
         fakeApi.addResponseCodeResult(responseCodesFactory.createItem())
-        fakeApi.addNextPath(responseCodesFactory.listNextPath[0])
+        fakeApi.addNextPath(responseCodesFactory.listNextPath.last())
 
         val listing = repository.getLatestCode()
 
@@ -67,7 +69,7 @@ class FetchCodesRepositoryImplTest {
         listing.networkState.observeForever(networkObserver)
 
         val saveObserver = mock(Observer::class.java) as Observer<ResponseCodeResult>
-        Mockito.`when`(dao.saveCode(responseCodesFactory.list[0])).then {
+        Mockito.`when`(dao.saveCode(responseCodesFactory.list.last())).then {
             saveCodeLiveData.value = it.arguments[0] as ResponseCodeResult?
             it
         }
@@ -76,14 +78,70 @@ class FetchCodesRepositoryImplTest {
         listing.fetch.invoke()
 
         MatcherAssert.assertThat(getNetworkState(listing), CoreMatchers.`is`(NetworkState.LOADED))
+        val inOrder = Mockito.inOrder(networkObserver)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADING)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADED)
+        inOrder.verifyNoMoreInteractions()
+
         // Check if save to db is called
-        Mockito.verify(saveObserver).onChanged(responseCodesFactory.list[0])
+        Mockito.verify(saveObserver).onChanged(responseCodesFactory.list.last())
     }
 
 
+    /**
+     * When item is successfully fetched, then verify fetch again
+     */
+    @Test
+    fun fetchItemThenRepeat() {
+
+        Mockito.doReturn(MutableLiveData<ResponseCodeResult>())
+            .`when`(dao).getLatestCode()
+        Mockito.doReturn(MutableLiveData<Long>()).`when`(dao).getCount()
+
+        fakeApi.addResponseCodeResult(responseCodesFactory.createItem())
+        fakeApi.addNextPath(responseCodesFactory.listNextPath.last())
+
+        val listing = repository.getLatestCode()
+
+        val networkObserver = mock(Observer::class.java) as Observer<NetworkState>
+        listing.networkState.observeForever(networkObserver)
+
+        val saveObserver = mock(Observer::class.java) as Observer<ResponseCodeResult>
+        Mockito.`when`(dao.saveCode(responseCodesFactory.list.last())).then {
+            saveCodeLiveData.value = it.arguments[0] as ResponseCodeResult?
+            it
+        }
+        saveCodeLiveData.observeForever(saveObserver)
+
+        listing.fetch.invoke()
+
+        MatcherAssert.assertThat(getNetworkState(listing), CoreMatchers.`is`(NetworkState.LOADED))
+        val inOrder = Mockito.inOrder(networkObserver)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADING)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADED)
+        inOrder.verifyNoMoreInteractions()
+
+        // Fetch again, and verify if everything is in order
+        fakeApi.addResponseCodeResult(responseCodesFactory.createItem())
+        fakeApi.addNextPath(responseCodesFactory.listNextPath.last())
+        listing.fetch.invoke()
+
+        MatcherAssert.assertThat(getNetworkState(listing), CoreMatchers.`is`(NetworkState.LOADED))
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADING)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADED)
+        inOrder.verifyNoMoreInteractions()
+
+        // Check if save to db is called 2 times, for every fetch
+        Mockito.verify(saveObserver, Mockito.atMost(2)).onChanged(responseCodesFactory.list.last())
+    }
+
+    /**
+     * Fetch response code when theres no network,
+     * verify correct network state is called
+     */
     @Test
     fun noNetworkNothingPersisted() {
-        fakeApi.failurePathMsg = "Failed to connect to /192.168.0.138:8000"
+        fakeApi.failurePathMsg = FAILED_TO_CONNECT_MESSAGE
 
         Mockito.doReturn(MutableLiveData<ResponseCodeResult>())
             .`when`(dao).getLatestCode()
@@ -98,9 +156,61 @@ class FetchCodesRepositoryImplTest {
 
         MatcherAssert.assertThat(getNetworkState(listing),
             CoreMatchers.`is`(NetworkState.error(fakeApi.failurePathMsg)))
-//        Mockito.verify(dao, never()).saveCode(mock(ResponseCodeResult::class.java))
+
+        val inOrder = Mockito.inOrder(networkObserver)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADING)
+        inOrder.verify(networkObserver).onChanged(NetworkState.error(fakeApi.failurePathMsg))
+        inOrder.verifyNoMoreInteractions()
     }
 
+    /**
+     * When item is successfully fetched, then verify fetch again
+     */
+    @Test
+    fun fetchItemNoNetworkThenRepeatFetchSuccessfully() {
+
+        fakeApi.failurePathMsg = FAILED_TO_CONNECT_MESSAGE
+
+        Mockito.doReturn(MutableLiveData<ResponseCodeResult>())
+            .`when`(dao).getLatestCode()
+        Mockito.doReturn(MutableLiveData<Long>()).`when`(dao).getCount()
+
+        val listing = repository.getLatestCode()
+
+        val networkObserver = mock(Observer::class.java) as Observer<NetworkState>
+        listing.networkState.observeForever(networkObserver)
+
+        listing.fetch.invoke()
+
+        MatcherAssert.assertThat(getNetworkState(listing),
+            CoreMatchers.`is`(NetworkState.error(FAILED_TO_CONNECT_MESSAGE)))
+        val inOrder = Mockito.inOrder(networkObserver)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADING)
+        inOrder.verify(networkObserver).onChanged(NetworkState.error(FAILED_TO_CONNECT_MESSAGE))
+        inOrder.verifyNoMoreInteractions()
+
+        // Fetch again, and verify if everything is in order
+        fakeApi.clear()
+        fakeApi.addResponseCodeResult(responseCodesFactory.createItem())
+        fakeApi.addNextPath(responseCodesFactory.listNextPath.last())
+
+        val saveObserver = mock(Observer::class.java) as Observer<ResponseCodeResult>
+        Mockito.`when`(dao.saveCode(responseCodesFactory.list.last())).then {
+            saveCodeLiveData.value = it.arguments[0] as ResponseCodeResult?
+            it
+        }
+        saveCodeLiveData.observeForever(saveObserver)
+
+        listing.fetch.invoke()
+
+        MatcherAssert.assertThat(getNetworkState(listing), CoreMatchers.`is`(NetworkState.LOADED))
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADING)
+        inOrder.verify(networkObserver).onChanged(NetworkState.LOADED)
+        inOrder.verifyNoMoreInteractions()
+
+        // Check if save to db is called
+        Mockito.verify(saveObserver).onChanged(responseCodesFactory.list.last())
+    }
 
     private fun getResponseCodeResult(listing: Listing<ResponseCodeResult>): ResponseCodeResult {
         val observer = LoggingObserver<ResponseCodeResult>()

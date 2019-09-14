@@ -2,6 +2,7 @@ package com.endumedia.fetchcodes.ui
 
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
 import android.os.Bundle
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.fragment.app.Fragment
@@ -9,12 +10,14 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.platform.app.InstrumentationRegistry
 import com.endumedia.fetchcodes.db.FetchCodesDb
 import com.endumedia.fetchcodes.repository.*
 import com.endumedia.notes.utils.ViewModelUtil
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
+import java.util.concurrent.TimeoutException
 
 
 /**
@@ -98,4 +101,14 @@ abstract class BaseUiTest {
     }
 
 
+
+    @Throws(InterruptedException::class, TimeoutException::class)
+    protected fun startMainActivity() {
+        val intent = Intent(
+            ApplicationProvider.getApplicationContext(),
+            MainActivity::class.java)
+
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        activity = InstrumentationRegistry.getInstrumentation().startActivitySync(intent)
+    }
 }

@@ -1,13 +1,10 @@
 package com.endumedia.fetchcodes.ui
 
-import android.content.Intent
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.*
-import androidx.test.platform.app.InstrumentationRegistry
 import com.endumedia.fetchcodes.R
 import com.endumedia.fetchcodes.repository.FetchCodesRepository
 import com.endumedia.fetchcodes.repository.FetchCodesRepositoryImpl
@@ -16,7 +13,6 @@ import com.endumedia.fetchcodes.utils.CountingAppExecutorsRule
 import org.hamcrest.core.StringContains.containsString
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.TimeoutException
 
 /**
  * Created by Nino on 13.09.19
@@ -38,21 +34,10 @@ class FetchCodesFragmentTest : BaseUiTest() {
      * shown, and fields are empty
      */
     @Test
-    fun openScreenNoData() {
+    fun openScreenInitialNoData() {
 
         startMainActivity()
-        Espresso.onView(withId(R.id.tvResponseCodeInfo))
-            .check(matches(isDisplayed()))
-
-        Espresso.onView(withId(R.id.tvResponseCode))
-            .check(matches(isDisplayed()))
-        Espresso.onView(withId(R.id.tvTimesFetched))
-            .check(matches(isDisplayed()))
-        Espresso.onView(withId(R.id.tvTimesFetchedInfo))
-            .check(matches(isDisplayed()))
-
-        Espresso.onView(withId(R.id.btFetch))
-            .check(matches(isDisplayed()))
+        matchMainViewsDisplayed()
 
         // Check if value views are empty
         Espresso.onView(withId(R.id.tvResponseCode))
@@ -60,7 +45,6 @@ class FetchCodesFragmentTest : BaseUiTest() {
         Espresso.onView(withId(R.id.tvTimesFetched))
             .check(matches(withText(containsString(""))))
     }
-
 
     /**
      * Open screen and check if db persisted data is loaded
@@ -72,18 +56,7 @@ class FetchCodesFragmentTest : BaseUiTest() {
         db.codesDao().saveCode(itemsFactory.createItem())
 
         startMainActivity()
-        Espresso.onView(withId(R.id.tvResponseCodeInfo))
-            .check(matches(isDisplayed()))
-
-        Espresso.onView(withId(R.id.tvResponseCode))
-            .check(matches(isDisplayed()))
-        Espresso.onView(withId(R.id.tvTimesFetched))
-            .check(matches(isDisplayed()))
-        Espresso.onView(withId(R.id.tvTimesFetchedInfo))
-            .check(matches(isDisplayed()))
-
-        Espresso.onView(withId(R.id.btFetch))
-            .check(matches(isDisplayed()))
+        matchMainViewsDisplayed()
 
         // Check if values are equal with produced item values
         Espresso.onView(withId(R.id.tvResponseCode))
@@ -92,9 +65,23 @@ class FetchCodesFragmentTest : BaseUiTest() {
             .check(matches(withText(itemsFactory.list.size.toString())))
     }
 
+    private fun matchMainViewsDisplayed() {
+        onView(withId(R.id.tvResponseCode))
+            .check(matches(isDisplayed()))
+        onView(withId(R.id.tvResponseCodeInfo))
+            .check(matches(isDisplayed()))
+        onView(withId(R.id.tvTimesFetched))
+            .check(matches(isDisplayed()))
+        onView(withId(R.id.tvTimesFetchedInfo))
+            .check(matches(isDisplayed()))
+
+        onView(withId(R.id.btFetch))
+            .check(matches(isDisplayed()))
+    }
+
     /**
-     * Open screen and press fetch, then fetch successfuly, then check if
-     * data is loaded into the views
+     * Open screen and press fetch, no preloaded data,
+     * then fetch successfully, and check if data is loaded into the views
      */
     @Test
     fun pressFetchInitialLoadData() {
@@ -107,8 +94,6 @@ class FetchCodesFragmentTest : BaseUiTest() {
         Espresso.onView(withId(R.id.btFetch)).perform(click())
 
 //        onView(withId(R.id.pbLoading)).check(matches(isDisplayed()))
-
-
 //        onView(withId(R.id.btFetch)).check(matches(not(isEnabled())))
 
         Espresso.onView(withId(R.id.tvResponseCode))
@@ -119,8 +104,31 @@ class FetchCodesFragmentTest : BaseUiTest() {
 
 
     /**
-     * Open screen and press fetch, then fetch successfully, then press fetch again
-     * to load new data, and verify the changes
+     * Open screen and press fetch, when already loaded data from db,
+     * then fetch successfully, then check if latest data is loaded into the views
+     */
+    @Test
+    fun pressFetchLoadDataNonEmptyDb() {
+
+        db.codesDao().saveCode(itemsFactory.createItem())
+
+        startMainActivity()
+        // Load item to fake api
+        fakeApi.addResponseCodeResult(itemsFactory.createItem())
+        fakeApi.addNextPath(itemsFactory.listNextPath.last())
+
+        Espresso.onView(withId(R.id.btFetch)).perform(click())
+
+        Espresso.onView(withId(R.id.tvResponseCode))
+            .check(matches(withText(containsString(itemsFactory.list.last().responseCode))))
+        Espresso.onView(withId(R.id.tvTimesFetched))
+            .check(matches(withText(itemsFactory.list.size.toString())))
+    }
+
+
+    /**
+     * Open screen and press fetch, then fetch successfully,
+     * then press fetch again to load new data, and verify the changes
      */
     @Test
     fun pressFetchLoadNewData() {
@@ -165,16 +173,4 @@ class FetchCodesFragmentTest : BaseUiTest() {
         onView(withId(com.google.android.material.R.id.snackbar_text))
             .check(matches(withText(fakeApi.failurePathMsg)))
     }
-
-
-    @Throws(InterruptedException::class, TimeoutException::class)
-    private fun startMainActivity() {
-        val intent = Intent(
-            ApplicationProvider.getApplicationContext(),
-            MainActivity::class.java)
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        activity = InstrumentationRegistry.getInstrumentation().startActivitySync(intent)
-    }
-
 }
